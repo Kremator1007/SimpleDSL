@@ -7,6 +7,7 @@
 #include <string>
 #include <tuple>
 #include <type_traits>
+#include <typeinfo>
 #include <vector>
 
 #include "for_each_on_tuple.h"
@@ -19,6 +20,7 @@ struct type_identity {
 struct Command {
 	virtual bool tryParsingParameters(std::string commandLine) = 0;
 	virtual void parseAndRun(std::string commandLine) = 0;
+	virtual std::string stringRepr() = 0;
 	virtual ~Command() = default;
 };
 
@@ -38,7 +40,7 @@ struct CommandImpl : public Command {
 		               [&](auto& tupleElem) { lineStream >> tupleElem; });
 		std::apply(commandCallable, inputParameters);
 	}
-	bool tryParsingParameters(std::string commandLine) {
+	bool tryParsingParameters(std::string commandLine) override {
 		bool parsingSuccess = true;
 		std::stringstream lineStream(commandLine);
 		std::string commandNameOnInput;
@@ -55,6 +57,11 @@ struct CommandImpl : public Command {
 			parsingSuccess = false;
 		return parsingSuccess;
 	}
+	std::string stringRepr() override {
+		std::string repr = commandName;
+		repr = repr + " " + ((std::string((typeid(Ts).name())) + " ") + ...);
+		return repr;
+	}
 };
 
 struct Interpreter {
@@ -68,8 +75,10 @@ struct Interpreter {
 	void runCommand(std::string commandLine) {
 		commandLine = trim(commandLine);
 		for (auto& command : commands) {
-			if (command->tryParsingParameters(commandLine))
+			if (command->tryParsingParameters(commandLine)) {
 				command->parseAndRun(commandLine);
+				std::cerr << command->stringRepr() << '\n';
+			}
 		}
 	}
 };
