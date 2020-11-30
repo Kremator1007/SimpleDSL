@@ -2,6 +2,7 @@
 #include <cassert>
 #include <functional>
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <tuple>
@@ -18,6 +19,7 @@ struct type_identity {
 struct Command {
 	virtual bool tryParsingParameters(std::string commandLine) = 0;
 	virtual void parseAndRun(std::string commandLine) = 0;
+	virtual ~Command() = default;
 };
 
 template <typename... Ts>
@@ -56,16 +58,16 @@ struct CommandImpl : public Command {
 };
 
 struct Interpreter {
-	std::vector<Command*> commands;
+	std::vector<std::unique_ptr<Command>> commands;
 	template <typename... Ts>
 	void addCommand(
 	    std::string commandName,
 	    typename type_identity<std::function<void(Ts...)>>::type callable) {
-		commands.push_back(new CommandImpl<Ts...>(commandName, callable));
+		commands.emplace_back(new CommandImpl<Ts...>(commandName, callable));
 	}
 	void runCommand(std::string commandLine) {
 		commandLine = trim(commandLine);
-		for (Command* command : commands) {
+		for (auto& command : commands) {
 			if (command->tryParsingParameters(commandLine))
 				command->parseAndRun(commandLine);
 		}
