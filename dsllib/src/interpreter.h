@@ -4,6 +4,7 @@
 #include <iostream>
 #include <memory>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <type_traits>
@@ -74,11 +75,23 @@ struct Interpreter {
 	}
 	void runCommand(std::string commandLine) {
 		commandLine = trim(commandLine);
+		std::vector<std::unique_ptr<Command>*> possibleCandidates;
 		for (auto& command : commands) {
-			if (command->tryParsingParameters(commandLine)) {
-				command->parseAndRun(commandLine);
-				std::cerr << command->stringRepr() << '\n';
-			}
+			if (command->tryParsingParameters(commandLine))
+				possibleCandidates.push_back(&command);
+		}
+		if (possibleCandidates.size() > 1) {
+			std::string ambiguousCallMessage{
+			    "Ambiguous function call. Possible candidates are:\n"};
+			for (auto commandPtr : possibleCandidates)
+				ambiguousCallMessage += ((*commandPtr)->stringRepr() + "\n");
+			throw std::runtime_error(ambiguousCallMessage);
+		} else if (possibleCandidates.empty()) {
+			throw std::runtime_error(
+			    "No candidate functions registered for command \"" +
+			    commandLine + "\"");
+		} else {
+			(*possibleCandidates[0])->parseAndRun(commandLine);
 		}
 	}
 };

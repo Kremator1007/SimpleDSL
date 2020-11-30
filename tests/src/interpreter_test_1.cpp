@@ -1,4 +1,5 @@
 #include <iostream>
+#include <stdexcept>
 #include <string>
 
 #include "interpreter.h"
@@ -6,7 +7,7 @@
 
 #include "doctest/doctest.h"
 
-TEST_CASE("Casual working;") {
+TEST_CASE("Casual working") {
 	Interpreter interpreter{};
 	int ans = -1;
 	auto addLambda = [&ans](int a, int b) { ans = a + b; };
@@ -23,7 +24,6 @@ TEST_CASE("Parameter amount overloading") {
 	Interpreter interpreter{};
 	int ans = -1;
 	auto add2Lambda = [&ans](int a, int b) { ans = a + b; };
-	;
 	auto add3Lambda = [&ans](int a, int b, int c) { ans = a + b + c; };
 	interpreter.addCommand<int, int>(std::string{"add"}, add2Lambda);
 	interpreter.addCommand<int, int, int>(std::string{"add"}, add3Lambda);
@@ -31,9 +31,18 @@ TEST_CASE("Parameter amount overloading") {
 	CHECK(ans == 5);
 	interpreter.runCommand("add 20 30 40");
 	CHECK(ans == 90);
+}
 
-	interpreter.runCommand("invalid command");
-	CHECK(ans == 90);
+TEST_CASE("Dealing with ill-formed commands") {
+	Interpreter interpreter{};
+	interpreter.addCommand<int>("ok", [](int) {});
+	interpreter.addCommand<float>("ok", [](float) {});
+	try {
+		interpreter.runCommand("ok 7");
+	} catch (std::runtime_error er) {
+		std::string erMsg(er.what());
+		CHECK(erMsg[0] == 'A');
+	}
 }
 
 TEST_CASE("Various parameter type overload") {
