@@ -65,6 +65,8 @@ struct CommandImpl : public Command {
 	}
 };
 
+enum class CommandIntepretingState { success, ambigouousCall, notRecognised };
+
 struct Interpreter {
 	std::vector<std::unique_ptr<Command>> commands;
 	template <typename... Ts>
@@ -73,25 +75,20 @@ struct Interpreter {
 	    typename type_identity<std::function<void(Ts...)>>::type callable) {
 		commands.emplace_back(new CommandImpl<Ts...>(commandName, callable));
 	}
-	void runCommand(std::string commandLine) {
+	CommandIntepretingState runCommand(std::string commandLine) {
 		commandLine = trim(commandLine);
 		std::vector<std::unique_ptr<Command>*> possibleCandidates;
 		for (auto& command : commands) {
 			if (command->tryParsingParameters(commandLine))
 				possibleCandidates.push_back(&command);
 		}
-		if (possibleCandidates.size() > 1) {
-			std::string ambiguousCallMessage{
-			    "Ambiguous function call. Possible candidates are:\n"};
-			for (auto commandPtr : possibleCandidates)
-				ambiguousCallMessage += ((*commandPtr)->stringRepr() + "\n");
-			throw std::runtime_error(ambiguousCallMessage);
-		} else if (possibleCandidates.empty()) {
-			throw std::runtime_error(
-			    "No candidate functions registered for command \"" +
-			    commandLine + "\"");
-		} else {
-			(*possibleCandidates[0])->parseAndRun(commandLine);
+		if (possibleCandidates.size() > 1)
+			return CommandIntepretingState::ambigouousCall;
+		else if (possibleCandidates.size() == 0)
+			return CommandIntepretingState::notRecognised;
+		else {
+			(*possibleCandidates.front())->parseAndRun(commandLine);
+			return CommandIntepretingState::success;
 		}
 	}
 };

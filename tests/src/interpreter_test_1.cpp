@@ -37,12 +37,8 @@ TEST_CASE("Dealing with ill-formed commands") {
 	Interpreter interpreter{};
 	interpreter.addCommand<int>("ok", [](int) {});
 	interpreter.addCommand<float>("ok", [](float) {});
-	try {
-		interpreter.runCommand("ok 7");
-	} catch (std::runtime_error er) {
-		std::string erMsg(er.what());
-		CHECK(erMsg[0] == 'A');
-	}
+	CommandIntepretingState res = interpreter.runCommand("ok 7");
+	CHECK(res == CommandIntepretingState::ambigouousCall);
 }
 
 TEST_CASE("Various parameter type overload") {
