@@ -1,5 +1,8 @@
 #include <tuple>
 #include <utility>
+
+namespace simplelang::detail {
+
 template <typename Tuple, typename Func, std::size_t... I>
 Func forEachOnTuple_impl(Tuple&& tuple, Func&& func,
                          std::index_sequence<I...>) {
@@ -14,3 +17,5 @@ Func forEachOnTuple(Tuple&& tuple, Func&& func) {
 	    std::make_index_sequence<
 	        std::tuple_size<std::remove_reference_t<Tuple>>::value>{});
 }
+
+}  // namespace simplelang::detail

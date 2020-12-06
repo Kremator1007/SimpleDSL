@@ -8,7 +8,7 @@
 #include "doctest/doctest.h"
 
 TEST_CASE("Casual working") {
-	Interpreter interpreter{};
+	simplelang::Interpreter interpreter{};
 	int ans = -1;
 	auto addLambda = [&ans](int a, int b) { ans = a + b; };
 	auto subtractLambda = [&ans](int a, int b) { ans = a - b; };
@@ -21,7 +21,7 @@ TEST_CASE("Casual working") {
 }
 
 TEST_CASE("Parameter amount overloading") {
-	Interpreter interpreter{};
+	simplelang::Interpreter interpreter{};
 	int ans = -1;
 	auto add2Lambda = [&ans](int a, int b) { ans = a + b; };
 	auto add3Lambda = [&ans](int a, int b, int c) { ans = a + b + c; };
@@ -34,15 +34,15 @@ TEST_CASE("Parameter amount overloading") {
 }
 
 TEST_CASE("Dealing with ill-formed commands") {
-	Interpreter interpreter{};
+	simplelang::Interpreter interpreter{};
 	interpreter.addCommand<int>("ok", [](int) {});
 	interpreter.addCommand<float>("ok", [](float) {});
-	CommandIntepretingState res = interpreter.runCommand("ok 7");
-	CHECK(res == CommandIntepretingState::ambigouousCall);
+	simplelang::CommandIntepretingState res = interpreter.runCommand("ok 7");
+	CHECK(res == simplelang::CommandIntepretingState::ambigouousCall);
 }
 
 TEST_CASE("Various parameter type overload") {
-	Interpreter interpreter{};
+	simplelang::Interpreter interpreter{};
 	int ans = -1;
 	auto dummyInt = [&ans](int) { ans = 0; };
 	auto dummyChar = [&ans](char) { ans = 1; };

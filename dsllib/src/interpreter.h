@@ -12,11 +12,16 @@
 #include <vector>
 
 #include "for_each_on_tuple.h"
-#include "trim.h"
+
+namespace simplelang {
+
+namespace detail {
+
 template <typename T>
 struct type_identity {
 	using type = T;
 };
+
 
 struct Command {
 	virtual bool tryParsingParameters(std::string commandLine) = 0;
@@ -27,11 +32,12 @@ struct Command {
 
 template <typename... Ts>
 struct CommandImpl : public Command {
-	CommandImpl(std::string commandName, std::function<void(Ts...)> callable)
-	    : commandName(commandName), commandCallable(callable) {}
 	std::string commandName;
 	std::function<void(Ts...)> commandCallable;
 	std::tuple<Ts...> inputParameters;
+
+	CommandImpl(std::string commandName, std::function<void(Ts...)> callable)
+	    : commandName(commandName), commandCallable(callable) {}
 	void parseAndRun(std::string commandLine) override {
 		std::stringstream lineStream(commandLine);
 		std::string commandNameOnInput;
@@ -64,20 +70,20 @@ struct CommandImpl : public Command {
 		return repr;
 	}
 };
+}  // namespace detail  
 
 enum class CommandIntepretingState { success, ambigouousCall, notRecognised };
 
 struct Interpreter {
-	std::vector<std::unique_ptr<Command>> commands;
+	std::vector<std::unique_ptr<detail::Command>> commands;
 	template <typename... Ts>
 	void addCommand(
 	    std::string commandName,
-	    typename type_identity<std::function<void(Ts...)>>::type callable) {
-		commands.emplace_back(new CommandImpl<Ts...>(commandName, callable));
+	    typename detail::type_identity<std::function<void(Ts...)>>::type callable) {
+		commands.emplace_back(new detail::CommandImpl<Ts...>(commandName, callable));
 	}
 	CommandIntepretingState runCommand(std::string commandLine) {
-		commandLine = trim(commandLine);
-		std::vector<std::unique_ptr<Command>*> possibleCandidates;
+		std::vector<std::unique_ptr<detail::Command>*> possibleCandidates;
 		for (auto& command : commands) {
 			if (command->tryParsingParameters(commandLine))
 				possibleCandidates.push_back(&command);
@@ -92,3 +98,4 @@ struct Interpreter {
 		}
 	}
 };
+}  // namespace simpllang
